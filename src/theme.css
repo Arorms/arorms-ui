@@ -1,0 +1,144 @@
+/*
+ * arorms design tokens — "Calm Operator".
+ *
+ * This file is the frozen contract of @arorms/ui: token NAMES never change, only values.
+ * Consumers import exactly two lines:
+ *
+ *   @import "tailwindcss";
+ *   @import "@arorms/ui/theme.css";
+ *
+ * Do not add `@import "tailwindcss"` here — that would load preflight twice.
+ * `@source "./"` makes Tailwind scan this package's own components for class names, so the
+ * consuming project never needs a node_modules path.
+ */
+
+@source "./";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  /* Semantic colors: values go through CSS variables so `.dark` can override them. */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+
+  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+
+  /* rounded-lg = 12px = the design system's --radius. Only existing Tailwind names are used. */
+  --radius-lg: var(--radius);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: calc(var(--radius) - 4px);
+
+  /* Override Tailwind's own shadow-sm instead of inventing shadow-card. */
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.04), 0 4px 12px rgb(0 0 0 / 0.03);
+
+  --animate-fade-in: fadeIn 0.35s ease-out;
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(4px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}
+
+:root {
+  --background: #f5f5f7;
+  --foreground: #1d1d1f;
+  --card: #ffffff;
+  --card-foreground: #1d1d1f;
+  --primary: #0047ff;
+  --primary-foreground: #ffffff;
+  --muted: #f5f5f7;
+  --muted-foreground: #86868b;
+  --border: #e8e8ed;
+  --input: #e8e8ed;
+  --ring: #0047ff;
+  --success: #15803d;
+  --warning: #b45309;
+  --danger: #dc2626;
+  --radius: 12px;
+  color-scheme: light;
+}
+
+.dark {
+  --background: #000000;
+  --foreground: #f5f5f7;
+  --card: #1c1c1e;
+  --card-foreground: #f5f5f7;
+  --primary: #0047ff;
+  --primary-foreground: #ffffff;
+  /* Recessed surface: deliberately not #1c1c1e, or inset panels vanish into the card. */
+  --muted: #141416;
+  --muted-foreground: #98989d;
+  --border: #2c2c2e;
+  --input: #2c2c2e;
+  --ring: #0047ff;
+  --success: #4ade80;
+  --warning: #fbbf24;
+  --danger: #f87171;
+  color-scheme: dark;
+}
+
+@layer base {
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text",
+      "Helvetica Neue", Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    background: var(--background);
+    color: var(--foreground);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #d2d2d7;
+    border-radius: 999px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #a1a1a6;
+  }
+
+  .dark ::-webkit-scrollbar-thumb {
+    background: #3a3a3c;
+  }
+
+  .dark ::-webkit-scrollbar-thumb:hover {
+    background: #48484a;
+  }
+
+  .dark input,
+  .dark textarea,
+  .dark select {
+    color-scheme: dark;
+  }
+}
