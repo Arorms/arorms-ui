@@ -47,6 +47,40 @@ this package never guesses a translation key.
 | Overlays | `Modal`, `ConfirmDialog`, `ToastProvider`, `useToast` |
 | Chrome | `AppShell`, `Sidebar`, `Header`, `SettingsMenu`, `ThemeSwitcher`, `LanguageSwitcher`, `ProtectedRoute`, `LoginPage`, `CallbackPage` |
 
+## Owning the sidebar body
+
+The shell owns the frame: brand row, the single scroll region, the user card. The middle is either
+`nav` (static `NavGroup[]`) or `body` — an arbitrary `ReactNode` the application renders. Use
+`body` when the navigation is not a plain list: collapsible groups, counters, a paginated history
+of conversations, "new item" actions.
+
+```tsx
+<AppShell
+  brand={{ title: 'CAS 知识库', subtitle: '人工维基', initial: 'C' }}
+  headerTitle={currentTitle}                  // breadcrumbs only derive from `nav`
+  sidebarTop={<Button variant="primary" className="w-full">发起新对话</Button>}
+  sidebarBody={<ChatSessionsPanel />}
+  userSlot={<SidebarUser name={name} detail={email} />}
+  onLogout={logout}
+/>
+```
+
+Rules for `body`:
+
+- `sidebarTop` stays pinned above the scroll region; everything inside `body` scrolls. The region
+  already carries the 12px gutter (`px-3`) — blocks own their own `px-3` if they need one.
+- Reuse the row recipe so app rows and built-in rows look identical:
+  `flex items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] leading-none transition-all`, active
+  `bg-primary font-medium text-primary-foreground shadow-sm`, idle
+  `text-muted-foreground hover:bg-muted hover:text-foreground`.
+- Link rows use `NavLink` (URL decides the active row) or a plain `<Link aria-current="page">` when
+  the row is active for another reason. The drawer closes on route change by itself;
+  call `useSidebarClose()` after non-navigating clicks (e.g. "new conversation").
+- Infinite lists: the scroll region is the nearest scroll container, so an `IntersectionObserver`
+  with the default viewport root is enough for a load-more sentinel. Do not pass the region as
+  `root` — a closed mobile drawer would keep paginating.
+
+
 ## Rules
 
 - Component defaults stay overridable via `className` (`cn(defaults, className)`).

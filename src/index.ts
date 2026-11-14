@@ -82,6 +82,7 @@ export {
   Sidebar,
   SidebarUser,
   SidebarSearch,
+  useSidebarClose,
   type SidebarProps,
   type NavItem,
   type NavGroup,

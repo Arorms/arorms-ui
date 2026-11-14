@@ -1,11 +1,17 @@
-import { useState, type ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
 import { cn } from '../cn.ts'
 import { Header } from './Header.tsx'
 import { Sidebar, type Brand, type NavGroup } from './Sidebar.tsx'
 
 export interface AppShellProps {
-  nav: NavGroup[]
+  /** Static navigation. Omit when `sidebarBody` owns the navigation area. */
+  nav?: NavGroup[]
+  /**
+   * App-owned navigation body, rendered in the sidebar's scroll region instead of `nav`. The shell
+   * keeps the brand row, the scroll region and the user card; the middle is the application's.
+   */
+  sidebarBody?: ReactNode
   brand: Brand
   /** Right side of the header. `LanguageSwitcher` is a sensible default here. */
   headerRight?: ReactNode
@@ -47,6 +53,7 @@ function matchNav(nav: NavGroup[], pathname: string): { group: string; label: st
  */
 export function AppShell({
   nav,
+  sidebarBody,
   brand,
   headerRight,
   headerTitle,
@@ -60,12 +67,18 @@ export function AppShell({
 }: AppShellProps) {
   const [mobileOpen, setMobileOpen] = useState(false)
   const { pathname } = useLocation()
-  const current = matchNav(nav, pathname)
+  const current = matchNav(nav ?? [], pathname)
+
+  // Any navigation closes the mobile drawer, including app-owned links the shell cannot observe.
+  useEffect(() => {
+    setMobileOpen(false)
+  }, [pathname])
 
   return (
     <div className="flex min-h-screen bg-background text-foreground">
       <Sidebar
         nav={nav}
+        body={sidebarBody}
         brand={brand}
         topSlot={sidebarTop}
         bottomSlot={sidebarBottom}

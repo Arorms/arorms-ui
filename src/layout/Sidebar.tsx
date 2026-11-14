@@ -1,10 +1,21 @@
 import { Link, NavLink } from 'react-router-dom'
 import { Search, X, type LucideIcon } from 'lucide-react'
-import type { ReactNode } from 'react'
+import { createContext, useContext, type ReactNode } from 'react'
 import { cn } from '../cn.ts'
 import { useUiLabels } from '../labels.tsx'
 import { IconButton } from '../components/Button.tsx'
 import { SettingsMenu } from '../components/SettingsMenu.tsx'
+
+const SidebarCloseContext = createContext<() => void>(() => {})
+
+/**
+ * Closes the mobile drawer from app-owned sidebar content (`body`). Browser back and route changes
+ * close it through `AppShell`; this is for items whose click the shell cannot see.
+ * No-op outside a `Sidebar`.
+ */
+export function useSidebarClose(): () => void {
+  return useContext(SidebarCloseContext)
+}
 
 export interface NavItem {
   to: string
@@ -31,7 +42,15 @@ export interface Brand {
 }
 
 export interface SidebarProps {
-  nav: NavGroup[]
+  /** Static navigation groups. Omit when `body` owns the whole navigation area. */
+  nav?: NavGroup[]
+  /**
+   * App-owned navigation body. When given it replaces `nav` entirely — the shell keeps the brand
+   * row, the scroll region and the user card, and renders whatever the application needs between
+   * them (collapsible groups, paginated lists, counters). Call `useSidebarClose()` after navigating
+   * so the mobile drawer closes.
+   */
+  body?: ReactNode
   brand: Brand
   /** Extra content between the brand block and the navigation (e.g. a search field). */
   topSlot?: ReactNode
@@ -55,6 +74,7 @@ export interface SidebarProps {
  */
 export function Sidebar({
   nav,
+  body,
   brand,
   topSlot,
   bottomSlot,
@@ -92,10 +112,14 @@ export function Sidebar({
             <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-foreground">
               <span className="text-[11px] font-bold text-background">{initial}</span>
             </div>
-            <div className="min-w-0 leading-none">
-              <div className="truncate text-[13px] font-semibold text-foreground">{brand.title}</div>
+            {/* Not `leading-none`: CJK glyphs fill the em box, so a Latin-tuned tight stack reads
+                as one cramped block. 1.3 keeps the two lines distinct in both scripts. */}
+            <div className="min-w-0">
+              <div className="truncate text-[13px] font-semibold leading-[1.3] text-foreground">
+                {brand.title}
+              </div>
               {brand.subtitle ? (
-                <div className="-mt-0.5 truncate text-[11px] font-medium text-muted-foreground">
+                <div className="mt-0.5 truncate text-[11px] font-medium leading-[1.3] text-muted-foreground">
                   {brand.subtitle}
                 </div>
               ) : null}
@@ -108,51 +132,62 @@ export function Sidebar({
 
         {topSlot ? <div className="px-3 pb-4">{topSlot}</div> : null}
 
-        <nav className="flex-1 space-y-6 overflow-y-auto px-3 py-2">
-          {nav.map((group) => (
-            <div key={group.title}>
-              <div className="mb-2 px-3 text-[11px] font-medium text-muted-foreground">{group.title}</div>
-              <ul className="space-y-1">
-                {group.items.map((item) => (
-                  <li key={item.to}>
-                    <NavLink
-                      to={item.to}
-                      end={item.end ?? item.to === '/'}
-                      onClick={onClose}
-                      className={({ isActive }) =>
-                        cn(
-                          'flex items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] leading-none transition-all',
-                          isActive
-                            ? 'bg-primary font-medium text-primary-foreground shadow-sm'
-                            : 'text-muted-foreground hover:bg-muted hover:text-foreground',
-                        )
-                      }
-                    >
-                      {({ isActive }) => (
-                        <>
-                          <item.icon size={16} strokeWidth={isActive ? 2.2 : 1.8} />
-                          <span className="min-w-0 flex-1 truncate">{item.label}</span>
-                          {item.count ? (
-                            <span
-                              className={cn(
-                                'min-w-5 rounded-full px-1.5 py-0.5 text-center text-[10px] font-semibold leading-none',
+        <SidebarCloseContext.Provider value={onClose}>
+          {/* The single scroll region: `nav` and app-owned `body` scroll together. */}
+          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 py-2">
+            {body !== undefined ? (
+              body
+            ) : (
+              <nav className="space-y-6">
+                {(nav ?? []).map((group) => (
+                  <div key={group.title}>
+                    <div className="mb-2 px-3 text-[11px] font-medium text-muted-foreground">
+                      {group.title}
+                    </div>
+                    <ul className="space-y-1">
+                      {group.items.map((item) => (
+                        <li key={item.to}>
+                          <NavLink
+                            to={item.to}
+                            end={item.end ?? item.to === '/'}
+                            onClick={onClose}
+                            className={({ isActive }) =>
+                              cn(
+                                'flex items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] leading-none transition-all',
                                 isActive
-                                  ? 'bg-primary-foreground/15 text-primary-foreground'
-                                  : 'bg-muted text-foreground',
-                              )}
-                            >
-                              {item.count > 99 ? '99+' : item.count}
-                            </span>
-                          ) : null}
-                        </>
-                      )}
-                    </NavLink>
-                  </li>
+                                  ? 'bg-primary font-medium text-primary-foreground shadow-sm'
+                                  : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+                              )
+                            }
+                          >
+                            {({ isActive }) => (
+                              <>
+                                <item.icon size={16} strokeWidth={isActive ? 2.2 : 1.8} />
+                                <span className="min-w-0 flex-1 truncate">{item.label}</span>
+                                {item.count ? (
+                                  <span
+                                    className={cn(
+                                      'min-w-5 rounded-full px-1.5 py-0.5 text-center text-[10px] font-semibold leading-none',
+                                      isActive
+                                        ? 'bg-primary-foreground/15 text-primary-foreground'
+                                        : 'bg-muted text-foreground',
+                                    )}
+                                  >
+                                    {item.count > 99 ? '99+' : item.count}
+                                  </span>
+                                ) : null}
+                              </>
+                            )}
+                          </NavLink>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                 ))}
-              </ul>
-            </div>
-          ))}
-        </nav>
+              </nav>
+            )}
+          </div>
+        </SidebarCloseContext.Provider>
 
         <div className="space-y-3 border-t border-border/60 p-3">
           {bottomSlot}
@@ -179,8 +214,10 @@ export function SidebarUser({ name, detail }: { name: string; detail?: string })
         {name.slice(0, 1).toUpperCase()}
       </div>
       <div className="min-w-0">
-        <div className="truncate text-[13px] font-medium leading-none text-foreground">{name}</div>
-        {detail ? <div className="mt-0.5 truncate text-[11px] text-muted-foreground">{detail}</div> : null}
+        <div className="truncate text-[13px] font-medium leading-[1.3] text-foreground">{name}</div>
+        {detail ? (
+          <div className="mt-0.5 truncate text-[11px] leading-[1.3] text-muted-foreground">{detail}</div>
+        ) : null}
       </div>
     </div>
   )
